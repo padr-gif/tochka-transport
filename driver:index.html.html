@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#14181C">
+<title>ТОЧКА — Водитель</title>
+<style>
+:root{--bg:#14181C;--panel:#1E252B;--line:#2E3840;--txt:#F2F4F5;--mut:#8A949C;--amb:#FFB300;--grn:#3DDC84;--red:#FF5A4F;
+--f:"Bahnschrift","Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden}
+body{height:100dvh;background:var(--bg);color:var(--txt);font-family:var(--f);font-size:17px;line-height:1.3;
+padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);-webkit-tap-highlight-color:transparent}
+.app{height:100%;max-width:480px;margin:0 auto}
+.screen{height:100%;display:flex;flex-direction:column;gap:clamp(6px,1.4vh,12px);padding:clamp(8px,1.6vh,14px) 16px}
+#login{justify-content:center;gap:clamp(14px,3vh,22px)}
+.hide{display:none!important}
+button{font:inherit;color:inherit;border-radius:14px;cursor:pointer;padding:0 12px;background:var(--panel);border:2px solid var(--line)}
+button:active{transform:scale(.98)}
+button:focus-visible,select:focus-visible,.plate-box:focus-visible{outline:3px solid var(--amb);outline-offset:2px}
+h1{font-size:28px;font-weight:700}
+.mut{color:var(--mut);font-size:15px}
+label,.sec{display:block;margin-bottom:5px;color:var(--mut);font-size:14px}
+select{width:100%;height:56px;font:inherit;color:var(--txt);background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:0 14px}
+.primary{background:var(--amb);border-color:var(--amb);color:#14181C;font-weight:700;font-size:20px;height:68px}
+.primary:disabled{background:var(--panel);border-color:var(--line);color:var(--mut);cursor:default}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.dot{width:14px;height:14px;border-radius:50%;background:var(--amb);box-shadow:0 0 0 5px rgba(255,179,0,.25)}
+/* Госномер */
+.plate-row{display:flex;align-items:center;justify-content:center;gap:10px}
+.plate-box{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel);cursor:pointer}
+.plate-box.focus{border-color:var(--amb)}
+.plate-main,.plate-region{display:flex;align-items:center;padding:12px 10px;gap:3px}
+.plate-region{border-left:2px solid var(--line)}
+.slot{width:21px;text-align:center;font-size:25px;font-weight:800}
+.slot.ghost{color:var(--mut);opacity:.35}
+.slot.cur{border-left:2px solid var(--amb);animation:blink 1s step-start infinite}
+@keyframes blink{50%{border-color:transparent}}
+.rus{font-size:8px;font-weight:700;color:var(--mut);text-align:center;line-height:1.25;padding-left:6px}
+.plate-clear{width:44px;height:44px;min-height:0;border-radius:50%;padding:0;flex:0 0 44px;color:var(--mut)}
+#kbOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;z-index:10}
+#kbOverlay.open{display:flex}
+.sheet{width:100%;max-width:480px;background:var(--panel);border-radius:18px 18px 0 0;padding:14px 12px calc(14px + env(safe-area-inset-bottom,0px))}
+.sheet .plate-row{margin-bottom:12px}
+.kb{display:flex;gap:6px;margin-bottom:6px}
+.k{flex:1;height:52px;padding:0;border-radius:10px;font-size:18px;font-weight:700;background:#28323A}
+.k:disabled{opacity:.3;cursor:default}
+.k.wide{flex:2;background:var(--amb);border-color:var(--amb);color:#14181C;font-size:16px}
+.k.wide:disabled{background:#28323A;border-color:var(--line);color:var(--mut)}
+/* Смена */
+.top{display:flex;align-items:center;gap:12px;background:var(--panel);border-radius:14px;padding:8px 12px}
+.badge{background:var(--amb);color:#14181C;font-weight:800;font-size:24px;border-radius:10px;min-width:50px;text-align:center;padding:0 8px}
+.top .grow{flex:1;min-width:0}
+.top b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.timer{font-variant-numeric:tabular-nums;font-size:19px;font-weight:700}
+.chips{display:flex;gap:6px;flex-wrap:nowrap}
+.chip{font-size:13px;padding:3px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut);white-space:nowrap}
+.chip.ok{color:var(--grn);border-color:var(--grn)}.chip.bad{color:var(--red);border-color:var(--red)}.chip.warn{color:var(--amb);border-color:var(--amb)}
+.next{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:2px;background:var(--panel);border-radius:18px;padding:12px 16px;border-left:8px solid var(--amb)}
+.next.stand{border-left-color:var(--grn)}
+.next.late{border-left-color:var(--red)}
+.next .lbl{color:var(--mut);font-size:14px}
+.next .name{font-size:clamp(24px,4.4vh,32px);font-weight:800;line-height:1.1}
+.next .big{font-size:clamp(44px,8vh,64px);font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--grn)}
+.next.late .big,.next.late .lbl{color:var(--red)}
+.bar{height:6px;border-radius:3px;background:var(--line);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--amb)}
+.acts{display:flex;gap:8px}
+.arrive{flex:1;height:clamp(64px,10vh,88px);font-size:clamp(20px,3.4vh,24px);background:var(--grn);border-color:var(--grn);color:#0B2A17;font-weight:800}
+.plus{flex:0 0 28%;height:clamp(64px,10vh,88px);font-size:20px;font-weight:700}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.seg.two{grid-template-columns:1fr 1fr}
+.seg button,#reports button{height:clamp(42px,6.5vh,54px);font-size:15px;line-height:1.1}
+.seg button[aria-pressed=true]{background:var(--amb);border-color:var(--amb);color:#14181C;font-weight:700}
+.seg button.brk[aria-pressed=true]{background:var(--red);border-color:var(--red);color:#fff}
+#reports{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+#reports button{font-size:14px;padding:0 4px}
+.end{height:clamp(40px,6vh,48px);border-color:var(--red);color:var(--red)}
+.end.armed{background:var(--red);color:#fff}
+.modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);padding:20px;z-index:20}
+.modal.open{display:flex}
+.modal>div{background:#3A2E0B;border:2px solid var(--amb);border-radius:16px;padding:16px;max-width:420px;width:100%}
+.modal button{margin-top:12px;height:52px;width:100%}
+#toast{position:fixed;left:16px;right:16px;top:calc(10px + env(safe-area-inset-top,0));max-width:448px;margin:0 auto;background:#fff;color:#14181C;
+border-radius:12px;padding:10px 14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:30}
+#toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}button:active{transform:none}}
+</style>
+</head>
+<body>
+<main class="app">
+
+<section id="login" class="screen">
+  <div><div class="brand"><span class="dot"></span><span class="mut">ТОЧКА · водитель</span></div><h1>Начать смену</h1></div>
+  <div><label for="route">Маршрут</label><select id="route"></select></div>
+  <div><label>Госномер автобуса</label>
+    <div class="plate-row">
+      <div class="plate-box" id="plateBox" role="button" tabindex="0" aria-label="Ввести госномер"></div>
+      <button class="plate-clear" id="plateClear" aria-label="Стереть номер">✕</button>
+    </div>
+  </div>
+  <button id="start" class="primary" disabled>Выехать на линию</button>
+  <p class="mut">Вы начнёте смену на конечной: до отправления будет время на стоянку. Автобус появится на карте у пассажиров после выезда.</p>
+</section>
+
+<div id="kbOverlay">
+  <div class="sheet">
+    <div class="plate-row"><div class="plate-box focus" id="kbPlate"></div></div>
+    <div class="kb" id="kbD"></div><div class="kb" id="kbL1"></div><div class="kb" id="kbL2"></div>
+  </div>
+</div>
+
+<section id="shift" class="screen hide">
+  <div class="top">
+    <div class="badge" id="rb">5</div>
+    <div class="grow"><b id="rn"></b><span class="mut" id="bn"></span></div>
+    <div class="timer" id="tm">0:00:00</div>
+  </div>
+  <div class="chips"><span class="chip" id="cGps">GPS</span><span class="chip" id="cNet">Связь</span><span class="chip" id="cTrips">Рейсов: 0</span></div>
+
+  <div class="next" id="card">
+    <div class="lbl" id="nl"></div>
+    <div class="name" id="nn"></div>
+    <div class="big hide" id="cd"></div>
+    <div class="mut" id="nsub"></div>
+    <div class="bar"><i id="barI"></i></div>
+  </div>
+  <div class="acts"><button id="arrive" class="arrive"></button><button id="plus" class="plus hide">+2 мин</button></div>
+
+  <div><div class="sec">Статус</div>
+    <div class="seg two" id="segStatus"><button data-v="line" aria-pressed="true">На линии</button><button data-v="break" class="brk" aria-pressed="false">Перерыв</button></div></div>
+  <div><div class="sec">Сколько людей в салоне</div>
+    <div class="seg" id="segLoad"><button data-v="0" aria-pressed="true">Свободно</button><button data-v="1" aria-pressed="false">Есть места</button><button data-v="2" aria-pressed="false">Битком</button></div></div>
+  <div><div class="sec">Сообщить диспетчеру</div>
+    <div id="reports"><button data-t="Пробка">Пробка</button><button data-t="Задержка">Задержка</button><button data-t="ДТП">ДТП</button><button data-t="Поломка">Поломка</button></div></div>
+  <button id="end" class="end">Завершить смену</button>
+</section>
+</main>
+
+<div class="modal" id="msgBox"><div><b>Сообщение от диспетчера</b><p id="msgTxt" style="margin-top:6px"></p><button id="msgOk" class="primary" style="font-size:18px">Принято</button></div></div>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+// Демо-данные: реальные остановки подключим позже. layover — стоянка на конечной, секунды
+const ROUTES = {
+  '6':{name:"Марьино — Главпочтамт",layover:180,stops:["Марьино", "Студенческий городок", "Автовокзал", "РКБ имени Семашко", "площадь Куйбышева", "Московская площадь", "6-я городская больница", "Железнодорожный вокзал", "Главпочтамт"]},
+  '16':{name:"Марьино — РКБ Семашко",layover:180,stops:["Марьино", "Больничный городок", "Гостиница «Москва»", "Автовокзал", "РКБ имени Семашко", "площадь Куйбышева", "Московская площадь", "рынок Привоз"]},
+  '61':{name:"Агроуниверситет — Пневматика",layover:180,stops:["Агроуниверситет", "Московская площадь", "Железнодорожный вокзал", "улица Павленко", "Завод «Пневматика»"]},
+  '62':{name:"Пневматика — Загородный",layover:180,stops:["Завод «Пневматика»", "Балаклавский рынок", "парк имени Тренёва", "площадь Ленина", "Главпочтамт", "Художественный музей", "Медицинский институт", "Железнодорожный вокзал", "6-я городская больница", "Московская площадь", "Загородный"]}
+};
+// Расписание (демо-значения, замените реальными): первый/последний рейс и интервалы, мин
+var SCHED={def:{first:'05:40',last:'21:50',peak:6,off:10},'6':{first:'05:30',last:'22:00',peak:8,off:12},'16':{first:'05:45',last:'21:30',peak:9,off:14}};
+function schedOf(rn){return SCHED[rn]||SCHED.def}
+function hmToMin(s){var p=s.split(':');return +p[0]*60+ +p[1]}
+function headwayMin(rn,min){var h=min/60,sc=schedOf(rn);return((h>=7&&h<9.5)||(h>=16.5&&h<19))?sc.peak:sc.off}
+function departures(rn,dir,day){var sc=schedOf(rn),t=hmToMin(sc.first)+(dir?Math.round(sc.off/2):0),end=hmToMin(sc.last),a=[];while(t<=end){a.push(day+t*60000);t+=headwayMin(rn,t)}return a}
+function nextDeparture(rn,dir,after){var d0=new Date(after);d0.setHours(0,0,0,0);var day=d0.getTime();
+  for(var k=0;k<2;k++){var L=departures(rn,dir,day+k*86400000);for(var i=0;i<L.length;i++)if(L[i]>=after)return L[i]}return null}
+const MIN_STAND=90; // минимальный отдых на конечной, сек
+const KEY='krymtrack:driver', PKEY='krymtrack:lastPlate'; // KEY читает приложение диспетчера
+const $=id=>document.getElementById(id);
+let S=load()||{active:false}, gpsId=null, endArm=null, msgTimer=null;
+function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch(e){return null}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('on'),2400)}
+function stops(){const s=ROUTES[S.route].stops;return S.dir?s.slice().reverse():s}
+function hm(ts){return new Date(ts).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}
+function fmt(s){s=Math.max(0,s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function event(type,text){S.log=(S.log||[]).concat({t:Date.now(),type,text}).slice(-50);save();toast(text+(navigator.onLine?'':' — отправится при появлении связи'))}
+function pressed(id,v){document.querySelectorAll('#'+id+' button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===v))}
+
+// --- Госномер: формат А123ВС + регион (2–3 цифры) ---
+const PT='LDDDLLDDD', GH=['А','1','2','3','В','С','8','2','']; // L — буква, D — цифра
+let pc=Array(9).fill(''), pi=0;
+const slot=i=>`<span class="slot${pc[i]?'':' ghost'}${i===pi&&!pc[i]?' cur':''}">${pc[i]||GH[i]}</span>`;
+function plateHtml(){return `<div class="plate-main">${[0,1,2,3,4,5].map(slot).join('')}</div><div class="plate-region">${[6,7,8].map(slot).join('')}<div class="rus">RUS<br>🇷🇺</div></div>`}
+const plateOk=()=>pc.slice(0,6).every(Boolean)&&pc[6]&&pc[7];
+const plateStr=()=>pc.slice(0,6).join('')+' '+pc.slice(6).join('');
+function updPlate(){
+  $('plateBox').innerHTML=$('kbPlate').innerHTML=plateHtml();
+  const exp=pi<9?PT[pi]:null;
+  document.querySelectorAll('.k[data-ch]').forEach(b=>b.disabled=exp===null||(/\d/.test(b.dataset.ch)?'D':'L')!==exp);
+  $('kbDone').disabled=!plateOk();
+  $('start').disabled=!plateOk();
+}
+function setPlate(str){pc=Array(9).fill('');String(str||'').replace(/\s/g,'').split('').slice(0,9).forEach((c,i)=>pc[i]=c);pi=pc.filter(Boolean).length;updPlate()}
+function pressKey(ch){if(pi>=9||(/\d/.test(ch)?'D':'L')!==PT[pi])return;pc[pi++]=ch;updPlate()}
+function backspace(){if(pi>0){pc[--pi]='';updPlate()}}
+function kbOpen(o){$('kbOverlay').classList.toggle('open',o);$('plateBox').classList.toggle('focus',o)}
+const mk=(a,x=0)=>a.map(c=>`<button class="k" data-ch="${c}">${c}</button>`).join('');
+$('kbD').innerHTML=mk('1234567890'.split(''));
+$('kbL1').innerHTML=mk('АВЕКМНО'.split(''))+'<button class="k" id="kbBack" aria-label="Стереть">⌫</button>';
+$('kbL2').innerHTML=mk('РСТУХ'.split(''))+'<button class="k wide" id="kbDone">Готово</button>';
+document.querySelectorAll('.k[data-ch]').forEach(b=>b.onclick=()=>pressKey(b.dataset.ch));
+$('kbBack').onclick=backspace; $('kbDone').onclick=()=>kbOpen(false);
+$('plateBox').onclick=()=>kbOpen(true);
+$('plateBox').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();kbOpen(true)}};
+$('plateClear').onclick=()=>{pc=Array(9).fill('');pi=0;updPlate()};
+$('kbOverlay').onclick=e=>{if(e.target.id==='kbOverlay')kbOpen(false)};
+let lp=null;try{lp=localStorage.getItem(PKEY)}catch(e){}
+setPlate(lp);
+
+// --- Вход ---
+$('route').innerHTML=Object.keys(ROUTES).map(k=>`<option value="${k}">№${k} · ${ROUTES[k].name}</option>`).join('');
+$('start').onclick=()=>{
+  if(!plateOk())return;
+  try{localStorage.setItem(PKEY,pc.join(''))}catch(e){}
+  S={active:true,route:$('route').value,bus:plateStr(),start:Date.now(),idx:1,dir:false,status:'line',load:0,trips:0,log:[]};
+  enterStand('Смена начата');
+  startGps();showShift();
+};
+
+// --- GPS ---
+function startGps(){
+  if(!navigator.geolocation){setGps('нет GPS','bad');return}
+  setGps('поиск','warn');
+  gpsId=navigator.geolocation.watchPosition(p=>{
+    S.pos={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy),t:Date.now()};
+    save();setGps('±'+S.pos.acc+' м',S.pos.acc>60?'warn':'ok');
+  },e=>setGps(e.code===1?'нет доступа':'нет сигнала','bad'),{enableHighAccuracy:true,maximumAge:5000,timeout:15000});
+}
+function setGps(t,c){const el=$('cGps');el.textContent='GPS: '+t;el.className='chip '+c}
+function setNet(){const c=$('cNet'),on=navigator.onLine;c.textContent=on?'Связь есть':'Нет связи';c.className='chip '+(on?'ok':'bad')}
+addEventListener('online',()=>{setNet();toast('Связь восстановлена')});
+addEventListener('offline',()=>{setNet();toast('Нет связи — данные сохраняются')});
+
+// --- Смена ---
+function showShift(){
+  $('login').classList.add('hide');$('shift').classList.remove('hide');
+  $('rb').textContent=S.route;$('rn').textContent=ROUTES[S.route].name;$('bn').textContent='Борт '+S.bus;
+  setNet();pressed('segStatus',S.status);pressed('segLoad',String(S.load));render();
+}
+function enterStand(msg){ // стоянка на конечной: ждём ближайшее время по расписанию
+  const now=Date.now();
+  let sched=nextDeparture(S.route,S.dir?1:0,now+MIN_STAND*1000);
+  const off=!sched||sched-now>40*60000; // вне часов работы — демо-стоянка
+  if(off)sched=now+ROUTES[S.route].layover*1000;
+  S.phase='stand';S.sched=sched;S.offSched=off;S.standEnd=sched;S.dep=0;S.warned=false;S.load=0;
+  pressed('segLoad','0');event('stand',msg+'. Отправление '+hm(sched)+(off?' (вне расписания)':''));
+}
+function render(){
+  const list=stops(),i=S.idx,n=list.length,stand=S.phase==='stand';
+  $('cTrips').textContent='Рейсов: '+S.trips;
+  $('card').classList.toggle('stand',stand);
+  $('cd').classList.toggle('hide',!stand);$('plus').classList.toggle('hide',!stand);
+  if(stand){
+    $('nn').textContent=list[0];
+    $('nsub').textContent=(S.offSched?'Отправление в ':'По расписанию в ')+hm(S.sched||S.standEnd)+(S.standEnd>S.sched+30000?' (стоите до '+hm(S.standEnd)+')':'')+' · далее '+list[1];
+    $('arrive').textContent='Отправляюсь';$('barI').style.width='0';
+  }else{
+    const last=i>=n-1;
+    $('nl').textContent=last?'Конечная':'Следующая остановка · '+i+' из '+(n-1);
+    $('nn').textContent=list[i];
+    $('nsub').textContent=last?'После неё — стоянка и обратный рейс':'Дальше: '+list[i+1];
+    $('arrive').textContent=last?'Прибыл на конечную':'Прибыл на остановку';
+    $('barI').style.width=Math.round((i-1)/(n-1)*100)+'%';
+  }
+  tick();
+}
+function tick(){
+  if(!S.active)return;
+  const s=Math.floor((Date.now()-S.start)/1000);
+  $('tm').textContent=Math.floor(s/3600)+':'+String(Math.floor(s/60)%60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  if(S.phase!=='stand')return;
+  const left=Math.round((S.standEnd-Date.now())/1000), late=left<0;
+  $('card').classList.toggle('late',late);
+  $('nl').textContent=late?'Пора выезжать':'Стоянка на конечной';
+  $('cd').textContent=(late?'+':'')+fmt(Math.abs(left));
+  if(late&&!S.warned){S.warned=true;save();toast('Время стоянки вышло — пора отправляться');if(navigator.vibrate)navigator.vibrate([300,150,300])}
+}
+setInterval(tick,1000);
+
+$('arrive').onclick=()=>{
+  const list=stops();
+  if(S.phase==='stand'){
+    S.phase='run';S.dep=Date.now();
+    const d=Math.round((S.dep-S.sched)/60000);
+    event('depart','Выезд '+hm(S.dep)+(S.offSched?'':d>=1?' · опоздание '+d+' мин':d<=-1?' · раньше графика на '+(-d)+' мин':' · по расписанию'));
+    render();return}
+  event('arrive','Прибытие: '+list[S.idx]);
+  if(S.idx>=list.length-1){
+    S.trips++;S.dir=!S.dir;S.idx=1;
+    enterStand('Конечная');
+  }else S.idx++;
+  save();render();
+};
+$('plus').onclick=()=>{S.standEnd=Math.max(S.standEnd,Date.now())+120000;S.warned=false;event('stand','Стоянка продлена на 2 мин');render()};
+$('segStatus').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  S.status=b.dataset.v;pressed('segStatus',S.status);
+  event('status',S.status==='break'?'Перерыв: пассажиры не видят автобус':'Вы снова на линии')};
+$('segLoad').onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  S.load=+b.dataset.v;pressed('segLoad',b.dataset.v);event('load','Загрузка: '+b.textContent)};
+$('reports').onclick=e=>{const b=e.target.closest('button');if(b)event('report','Диспетчеру отправлено: '+b.dataset.t)};
+
+// Сообщения от диспетчера (приложение диспетчера пишет в этот ключ)
+function checkDispatch(){
+  if(!S.active)return;
+  let a=[];try{a=JSON.parse(localStorage.getItem('krymtrack:dispatch'))||[]}catch(e){}
+  const m=a.filter(x=>x.id>(S.lastMsg||S.start)&&(x.to==='all'||x.to===S.bus));
+  if(!m.length)return;
+  S.lastMsg=m[m.length-1].id;save();
+  $('msgTxt').textContent=m[m.length-1].text;$('msgBox').classList.add('open');
+  if(navigator.vibrate)navigator.vibrate(200);
+}
+setInterval(checkDispatch,2000);
+
+$('msgOk').onclick=()=>{$('msgBox').classList.remove('open');event('ack','Сообщение принято')};
+
+$('end').onclick=()=>{
+  const b=$('end');
+  if(!endArm){endArm=setTimeout(()=>{endArm=null;b.classList.remove('armed');b.textContent='Завершить смену'},4000);
+    b.classList.add('armed');b.textContent='Нажмите ещё раз, чтобы завершить';return}
+  clearTimeout(endArm);endArm=null;clearTimeout(msgTimer);
+  if(gpsId!==null)navigator.geolocation.clearWatch(gpsId);
+  event('shift','Смена завершена');S={active:false};save();
+  $('shift').classList.add('hide');$('login').classList.remove('hide');
+  b.classList.remove('armed');b.textContent='Завершить смену';$('msgBox').classList.remove('open');
+};
+
+// Восстановление смены после перезагрузки
+if(S.active&&ROUTES[S.route]){startGps();showShift();}else S={active:false};
+</script>
+</body>
+</html>
